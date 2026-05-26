@@ -2,13 +2,6 @@
 # GB-Phys TrajNet  –  .gitignore
 # ---------------------------------------------------------------------------
 
-# ---- Data (large, not committed) ------------------------------------------
-data/
-*.tfrecord
-*.tfrecord-*
-*.bin
-*.tar.gz
-
 # ---- Model checkpoints and weights ----------------------------------------
 checkpoints/
 *.pt
