@@ -1,0 +1,103 @@
+name: waymo-trajnet
+
+# ---------------------------------------------------------------------------
+# GB-Phys TrajNet  –  Conda environment specification
+#
+# IMPORTANT: Do not use `conda env create -f environment.yml` alone.
+# Several packages require special installation steps:
+#
+#   1. jaxlib 0.4.13 is NOT on PyPI — must come from JAX's GCS wheel server
+#   2. typing_extensions must be force-installed AFTER tensorflow to bypass
+#      TF 2.13's overly restrictive <4.6.0 metadata constraint
+#   3. PyTorch CUDA build must match the cluster's CUDA driver version
+#
+# RECOMMENDED: Use scripts/setup_env.sh which handles all of these correctly.
+#
+# Manual install order (if not using setup_env.sh):
+#   1. numpy==1.23.5
+#   2. tensorflow==2.13.0
+#   3. tensorflow_probability==0.21.0
+#   4. typing_extensions==4.12.2  (via wheel, --no-deps --force-reinstall)
+#   5. torch  (with correct --index-url for CUDA version)
+#   6. jaxlib==0.4.13  (-f https://storage.googleapis.com/jax-releases/jax_releases.html)
+#   7. jax==0.4.13     (same -f flag)
+#   8. waymo-open-dataset-tf-2-12-0==1.6.7
+#   9. remaining packages
+# ---------------------------------------------------------------------------
+
+channels:
+  - defaults
+  - conda-forge
+
+dependencies:
+  - python=3.10
+  - pip
+
+  - pip:
+    # ── Core numerics (must be installed BEFORE tensorflow) ──────────────────
+    - numpy==1.23.5
+
+    # ── TensorFlow (data loading via tf.data — CPU build sufficient) ─────────
+    - tensorflow==2.13.0
+
+    # ── tensorflow_probability (required by waymo SDK at runtime) ─────────────
+    - tensorflow_probability==0.21.0
+
+    # ── typing_extensions ─────────────────────────────────────────────────────
+    # NOTE: conda env create will install this, but the version pip resolves
+    # may be constrained by TF's <4.6.0 metadata.  setup_env.sh force-installs
+    # 4.12.2 after all other packages to guarantee the correct version.
+    - typing_extensions==4.12.2
+
+    # ── PyTorch ───────────────────────────────────────────────────────────────
+    # NOTE: The correct --index-url depends on the CUDA driver version.
+    # setup_env.sh auto-detects this. If installing manually:
+    #   CUDA 12.8+:  --index-url https://download.pytorch.org/whl/cu128
+    #   CUDA 12.6:   --index-url https://download.pytorch.org/whl/cu126
+    #   CUDA 12.4:   --index-url https://download.pytorch.org/whl/cu124
+    #   CUDA 11.8:   --index-url https://download.pytorch.org/whl/cu118
+    #   CPU only:    --index-url https://download.pytorch.org/whl/cpu
+    - torch
+    - torchvision
+    - torchaudio
+
+    # ── jaxlib (waymo SDK dependency — NOT on PyPI, use JAX GCS bucket) ───────
+    # pip install jaxlib==0.4.13 -f https://storage.googleapis.com/jax-releases/jax_releases.html
+    - jaxlib==0.4.13
+    - jax==0.4.13
+
+    # ── Waymo Open Dataset SDK ────────────────────────────────────────────────
+    - waymo-open-dataset-tf-2-12-0==1.6.7
+
+    # ── ml-dtypes (pinned to avoid numpy ABI conflicts with TF/jax) ──────────
+    - ml-dtypes==0.2.0
+
+    # ── Serialisation ─────────────────────────────────────────────────────────
+    - protobuf==3.20.3
+
+    # ── Data science ──────────────────────────────────────────────────────────
+    - pandas==1.5.3
+    - scipy
+
+    # ── Visualisation (non-interactive — safe for SLURM, uses Agg backend) ───
+    - matplotlib==3.6.1
+    - Pillow>=9.0
+
+    # ── Config / utilities ────────────────────────────────────────────────────
+    - pyyaml
+    - tqdm
+    - tensorboard
+    - tensorboardX
+
+    # ── Cloud storage (GCS streaming) ─────────────────────────────────────────
+    - gcsfs
+    - google-cloud-storage
+    - grpcio
+
+    # ── Waymo optional runtime deps ───────────────────────────────────────────
+    - apache-beam
+
+    # ── Jupyter (local development only — not needed on HPC) ─────────────────
+    - ipykernel
+    - jupyterlab
+    - ipywidgets

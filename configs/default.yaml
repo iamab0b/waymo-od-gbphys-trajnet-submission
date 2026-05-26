@@ -1,0 +1,156 @@
+# GB-Phys TrajNet – Default Hyperparameter Configuration
+# All values match the project plan.
+# Override individual fields via command-line args in trainer.py.
+
+# ---------------------------------------------------------------------------
+# Data
+# ---------------------------------------------------------------------------
+data:
+  # --- GCS tf_example format (primary format for training/eval) ---
+  gcs_bucket_tf: gs://waymo_open_dataset_motion_v_1_3_1/uncompressed/tf_example
+  gcs_train: gs://waymo_open_dataset_motion_v_1_3_1/uncompressed/tf_example/training/training_tfexample.tfrecord-*-of-01000
+  gcs_val: gs://waymo_open_dataset_motion_v_1_3_1/uncompressed/tf_example/validation/validation_tfexample.tfrecord-*-of-00150
+  gcs_test: gs://waymo_open_dataset_motion_v_1_3_1/uncompressed/tf_example/testing/testing_tfexample.tfrecord-*-of-00150
+  gcs_val_interactive: gs://waymo_open_dataset_motion_v_1_3_1/uncompressed/tf_example/validation_interactive/validation_interactive_tfexample.tfrecord-*-of-00150
+  gcs_test_interactive: gs://waymo_open_dataset_motion_v_1_3_1/uncompressed/tf_example/testing_interactive/testing_interactive_tfexample.tfrecord-*-of-00150
+
+  # --- GCS scenario format (alternative proto-based format) ---
+  gcs_bucket_scenario: gs://waymo_open_dataset_motion_v_1_3_1/uncompressed/scenario
+  gcs_scenario_train: gs://waymo_open_dataset_motion_v_1_3_1/uncompressed/scenario/training/training.tfrecord-*-of-01000
+  gcs_scenario_train_20s: gs://waymo_open_dataset_motion_v_1_3_1/uncompressed/scenario/training_20s/training_20s.tfrecord-*-of-01000
+  gcs_scenario_val: gs://waymo_open_dataset_motion_v_1_3_1/uncompressed/scenario/validation/validation.tfrecord-*-of-00150
+  gcs_scenario_val_interactive: gs://waymo_open_dataset_motion_v_1_3_1/uncompressed/scenario/validation_interactive/validation_interactive.tfrecord-*-of-00150
+  gcs_scenario_test: gs://waymo_open_dataset_motion_v_1_3_1/uncompressed/scenario/testing/testing.tfrecord-*-of-00150
+  gcs_scenario_test_interactive: gs://waymo_open_dataset_motion_v_1_3_1/uncompressed/scenario/testing_interactive/testing_interactive.tfrecord-*-of-00150
+
+  # --- Local / HPC ---
+  local_data_dir: null          # path to staged local TFRecord shards
+  shuffle_buffer: 1000
+  num_parallel_reads: auto
+
+# ---------------------------------------------------------------------------
+# Model
+# ---------------------------------------------------------------------------
+model:
+  # Encoders
+  agent_input_dim: 12           # x,y,vx,vy,ax,ay,theta,l,w,type_oh(3)
+  agent_embedding_dim: 128
+  road_embedding_dim: 128
+  tl_embedding_dim: 64
+  use_transformer_encoder: false
+
+  # Goal predictor
+  N_candidates: 64
+  K: 6                          # number of trajectory modes
+  goal_base_radius: 50.0        # metres
+  goal_speed_scale: 5.0
+
+  # GRU decoder
+  gru_hidden_dim: 256
+  gru_layers: 2
+  gru_dropout: 0.1
+
+  # Bicycle kinematics (vehicle defaults; per-agent type used in AgentTypeKinematics)
+  dt: 0.1                       # seconds
+  vehicle:
+    wheelbase: 2.7
+    a_max: 5.0
+    delta_max: 0.5
+  cyclist:
+    wheelbase: 1.0
+    a_max: 3.0
+    delta_max: 1.0
+  pedestrian:
+    wheelbase: 0.5
+    a_max: 2.0
+    delta_max: 2.0
+
+  # Prediction horizon
+  T: 80                         # internal steps at 10 Hz
+  T_submission: 16              # downsampled to 2 Hz for submission
+
+# ---------------------------------------------------------------------------
+# Training
+# ---------------------------------------------------------------------------
+training:
+  batch_size: 32
+  accumulation_steps: 4         # effective batch = 32 * 4 = 128
+  use_mixed_precision: true
+  clip_grad_norm: 5.0
+  augment: true
+  seed: 42
+
+  # Learning rates per phase
+  phase1:
+    lr: 5.0e-4
+    num_epochs: 10
+    weight_decay: 1.0e-4
+  phase2:
+    lr: 1.0e-3
+    num_epochs: 15
+    weight_decay: 1.0e-4
+  phase3:
+    lr: 1.0e-4
+    num_epochs: 10
+    weight_decay: 1.0e-5
+
+  # LR scheduler
+  scheduler: cosine_annealing
+  eta_min_factor: 0.01          # eta_min = lr * eta_min_factor
+
+# ---------------------------------------------------------------------------
+# Loss
+# ---------------------------------------------------------------------------
+loss:
+  lambda_goal: 1.0
+  lambda_wta: 1.0
+  lambda_physics: 0.1
+  lambda_boundary: 0.5
+
+  goal_loss:
+    label_smoothing: 0.0
+
+  physics_loss:
+    w_jerk: 0.1
+    w_steer: 0.1
+    w_lat: 0.1
+
+  boundary_loss:
+    threshold: 5.0              # metres
+
+# ---------------------------------------------------------------------------
+# Evaluation / Submission
+# ---------------------------------------------------------------------------
+evaluation:
+  track_steps_per_second: 10
+  prediction_steps_per_second: 2
+  miss_rate_threshold: 2.0      # metres
+  overlap_distance_threshold: 1.0
+  speed_lower_bound: 1.4        # m/s
+  speed_upper_bound: 11.0
+  max_predictions: 6
+  submission_indices: [4, 9, 14, 19, 24, 29, 34, 39, 44, 49, 54, 59, 64, 69, 74, 79]
+
+# ---------------------------------------------------------------------------
+# Checkpointing / Logging
+# ---------------------------------------------------------------------------
+io:
+  checkpoint_dir: checkpoints
+  log_dir: logs/tensorboard
+  log_every: 50
+  save_every: 500
+  eval_every: 1000
+
+# ---------------------------------------------------------------------------
+# Submission metadata
+# ---------------------------------------------------------------------------
+submission:
+  account_name: smehta22@terpmail.umd.edu
+  unique_method_name: gbphys_trajnet
+  method_name: GB-Phys TrajNet
+  description: >
+    Physics-informed multi-modal trajectory prediction using goal-conditioned
+    GRU decoder with differentiable bicycle kinematics.
+  authors:
+    - Sahil Mehta
+  affiliation: University of Maryland, College Park

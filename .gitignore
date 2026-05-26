@@ -1,0 +1,60 @@
+# ---------------------------------------------------------------------------
+# GB-Phys TrajNet  –  .gitignore
+# ---------------------------------------------------------------------------
+
+# ---- Data (large, not committed) ------------------------------------------
+data/
+*.tfrecord
+*.tfrecord-*
+*.bin
+*.tar.gz
+
+# ---- Model checkpoints and weights ----------------------------------------
+checkpoints/
+*.pt
+*.pth
+
+# ---- Logs -----------------------------------------------------------------
+logs/
+runs/
+
+# ---- Python artefacts ------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ---- Jupyter ---------------------------------------------------------------
+.ipynb_checkpoints/
+*.ipynb
+
+# ---- Virtual environments --------------------------------------------------
+.venv/
+venv/
+env/
+.conda/
+
+# ---- OS artefacts ----------------------------------------------------------
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# ---- Submission artefacts --------------------------------------------------
+submission/
+*.pb
+
+# ---- Results (generated outputs) -------------------------------------------
+results/checkpoints/
+results/logs/
+results/submissions/
+
+# ---- Misc ------------------------------------------------------------------
+*.tmp
+*.bak
+.env
