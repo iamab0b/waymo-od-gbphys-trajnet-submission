@@ -23,6 +23,7 @@ build/
 .eggs/
 
 # ---- Jupyter ---------------------------------------------------------------
+notebooks/
 .ipynb_checkpoints/
 *.ipynb
 
